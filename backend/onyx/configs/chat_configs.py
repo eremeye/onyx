@@ -1,6 +1,5 @@
 import os
 
-
 PROMPTS_YAML = "./onyx/seeding/prompts.yaml"
 PERSONAS_YAML = "./onyx/seeding/personas.yaml"
 
@@ -76,6 +75,11 @@ NUM_PERSONA_PROMPT_GENERATION_CHUNKS = 5
 # in relation to the user query
 DISABLE_LLM_DOC_RELEVANCE = (
     os.environ.get("DISABLE_LLM_DOC_RELEVANCE", "").lower() == "true"
+)
+
+# Skip generating an answer from the LLM, only return search results
+SKIP_GEN_AI_ANSWER_GENERATION = (
+    os.environ.get("SKIP_GEN_AI_ANSWER_GENERATION", "").lower() == "true"
 )
 
 # Stops streaming answers back to the UI if this pattern is seen:

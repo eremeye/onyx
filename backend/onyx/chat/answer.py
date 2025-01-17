@@ -1,25 +1,14 @@
-from collections.abc import Callable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from uuid import uuid4
 
 from langchain.schema.messages import BaseMessage
-from langchain_core.messages import AIMessageChunk
-from langchain_core.messages import ToolCall
+from langchain_core.messages import AIMessageChunk, ToolCall
 
 from onyx.chat.llm_response_handler import LLMResponseHandlerManager
-from onyx.chat.models import AnswerQuestionPossibleReturn
-from onyx.chat.models import AnswerStyleConfig
-from onyx.chat.models import CitationInfo
-from onyx.chat.models import OnyxAnswerPiece
-from onyx.chat.models import PromptConfig
-from onyx.chat.prompt_builder.build import AnswerPromptBuilder
-from onyx.chat.prompt_builder.build import default_build_system_message
-from onyx.chat.prompt_builder.build import default_build_user_message
-from onyx.chat.prompt_builder.build import LLMCall
+from onyx.chat.models import AnswerQuestionPossibleReturn, AnswerStyleConfig, CitationInfo, OnyxAnswerPiece, PromptConfig
+from onyx.chat.prompt_builder.build import AnswerPromptBuilder, LLMCall, default_build_system_message, default_build_user_message
 from onyx.chat.stream_processing.answer_response_handler import (
     CitationResponseHandler,
-)
-from onyx.chat.stream_processing.answer_response_handler import (
     DummyAnswerResponseHandler,
 )
 from onyx.chat.stream_processing.utils import (
@@ -34,10 +23,10 @@ from onyx.tools.force import ForceUseTool
 from onyx.tools.models import ToolResponse
 from onyx.tools.tool import Tool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
+from onyx.tools.tool_implementations.search_like_tool_utils import FINAL_CONTEXT_DOCUMENTS_ID
 from onyx.tools.tool_runner import ToolCallKickoff
 from onyx.tools.utils import explicit_tool_calling_supported
 from onyx.utils.logger import setup_logger
-
 
 logger = setup_logger()
 
@@ -201,6 +190,18 @@ class Answer:
             self.skip_gen_ai_answer_generation
             and not current_llm_call.force_use_tool.force_use
         ):
+            # Get search results even when skipping LLM answer generation
+            final_search_results, displayed_search_results = SearchTool.get_search_result(
+                current_llm_call
+            ) or ([], [])
+
+            # Return search results directly
+            if final_search_results:
+                for doc in final_search_results:
+                    yield ToolResponse(
+                        response=doc,
+                        response_type=FINAL_CONTEXT_DOCUMENTS_ID,
+                    )
             return
 
         # set up "handlers" to listen to the LLM response stream and
